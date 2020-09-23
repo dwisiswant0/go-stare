@@ -3,7 +3,7 @@ name: "Gosum"
 on:
   push:
     branches:
-      - "master"
+      - "main"
     paths:
       - ".github/workflows/gosum.yaml"
       - "go.mod"
