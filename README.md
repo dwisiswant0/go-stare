@@ -1,7 +1,7 @@
 # go-stare
 
 [![made-with-Go](https://img.shields.io/badge/made%20with-Go-brightgreen.svg)](http://golang.org)
-[![go-report](https://goreportcard.com/badge/github.com/dwisiswant0/go-stare)](https://goreportcard.com/report/github.com/dwisiswant0/go-stare)
+[![go-report](https://goreportcard.com/badge/github.com/dwisiswant0/go-stare?_=1)](https://goreportcard.com/report/github.com/dwisiswant0/go-stare)
 [![license](https://img.shields.io/badge/license-MIT-_red.svg)](https://opensource.org/licenses/MIT)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dwisiswant0/go-stare/issues)
 [![godoc](https://img.shields.io/badge/godoc-reference-brightgreen.svg)](https://godoc.org/github.com/dwisiswant0/go-stare)
