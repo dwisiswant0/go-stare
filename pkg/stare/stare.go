@@ -11,6 +11,7 @@ import (
 	"path"
 	"regexp"
 	"sync"
+	"time"
 
 	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/cdproto/page"
@@ -21,18 +22,24 @@ import (
 
 // Config declare its options
 type Config struct {
-	Concurrency    int
-	Quality        int64
-	Target, Output string
-	Buffer         []byte
-	URL            *bufio.Scanner
-	Verbose        bool
+	Concurrency, Timeout int
+	Quality              int64
+	Target, Output       string
+	Buffer               []byte
+	URL                  *bufio.Scanner
+	Verbose              bool
+	Context              context.Context
+	CtxCancel            context.CancelFunc
 }
 
 // New to proceed screenshots
 func New(cfg *Config) {
 	var wg sync.WaitGroup
 	jobs := make(chan string)
+
+	cfg.Context, _ = chromedp.NewContext(context.Background())
+	cfg.Context, cfg.CtxCancel = context.WithTimeout(cfg.Context, time.Duration(cfg.Timeout)*time.Second)
+	defer cfg.CtxCancel()
 
 	for i := 0; i < cfg.Concurrency; i++ {
 		wg.Add(1)
@@ -60,10 +67,7 @@ func New(cfg *Config) {
 }
 
 func (cfg *Config) exec(url string) {
-	ctx, cancel := chromedp.NewContext(context.Background())
-	defer cancel()
-
-	if err := chromedp.Run(ctx, screenshot(url, cfg.Quality, &cfg.Buffer)); err != nil {
+	if err := chromedp.Run(cfg.Context, screenshot(url, cfg.Quality, &cfg.Buffer)); err != nil {
 		if cfg.Verbose {
 			fmt.Fprintf(os.Stderr, "[%s] %s\n", aurora.Red("!"), err.Error())
 		}
