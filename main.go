@@ -14,7 +14,7 @@ import (
 
 const (
 	author  = "dwisiswant0"
-	version = "0.0.1"
+	version = "0.0.2"
 	banner  = `
                       _
    __ _  ___ ____ ___| |_ __ _ _ __ ___ 
