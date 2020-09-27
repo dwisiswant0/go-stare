@@ -76,13 +76,14 @@ Simply, go-stare can be run with:
 
 This will display help for the tool. Here are all the switches it supports.
 
-| **Flag**          	| **Description**                                        	|
-|-------------------	|--------------------------------------------------------	|
-| -t, --target      	| Target to captures _(single target URL or list)_       	|
-| -c, --concurrency 	| Set the concurrency level _(default: 5)_              	|
-| -o, --output      	| Screenshot directory output results _(default: ./out)_ 	|
-| -q, --quality     	| Image quality to produce _(default: 75)_               	|
-| -v, --verbose     	| Verbose mode                                           	|
+| **Flag**          	| **Description**                                               |
+|-------------------	|-----------------------------------------------------------    |
+| -t, --target      	| Target to captures _(single target URL or list)_              |
+| -c, --concurrency 	| Set the concurrency level _(default: 5)_                      |
+| -o, --output      	| Screenshot directory output results _(default: ./out)_        |
+| -q, --quality     	| Image quality to produce _(default: 75)_                      |
+| -T, --timeout     	| Maximum time (seconds) allowed for connection _(default: 10)_ |
+| -v, --verbose     	| Verbose mode                                                  |
 
 ### Target
 

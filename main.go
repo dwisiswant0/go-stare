@@ -47,6 +47,9 @@ func init() {
 	flag.Int64Var(&cfg.Quality, "quality", 75, "")
 	flag.Int64Var(&cfg.Quality, "q", 75, "")
 
+	flag.IntVar(&cfg.Timeout, "timeout", 10, "")
+	flag.IntVar(&cfg.Timeout, "T", 10, "")
+
 	flag.BoolVar(&cfg.Verbose, "verbose", false, "")
 	flag.BoolVar(&cfg.Verbose, "v", false, "")
 
@@ -63,6 +66,7 @@ func init() {
 		h += "  -c, --concurrency <int>     Set the concurrency level (default: 50)\n"
 		h += "  -o, --output <DIR>          Screenshot directory output results (default: ./out)\n"
 		h += "  -q, --quality <int>         Image quality to produce (default: 75)\n"
+		h += "  -T, --timeout <int>         Maximum time (seconds) allowed for connection (default: 10)\n"
 		h += "  -v, --verbose               Verbose mode\n\n"
 
 		h += "Examples:\n"
