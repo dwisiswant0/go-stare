@@ -82,7 +82,7 @@ This will display help for the tool. Here are all the switches it supports.
 | -c, --concurrency 	| Set the concurrency level _(default: 5)_                      |
 | -o, --output      	| Screenshot directory output results _(default: ./out)_        |
 | -q, --quality     	| Image quality to produce _(default: 75)_                      |
-| -T, --timeout     	| Maximum time (seconds) allowed for connection _(default: 10)_ |
+| -T, --timeout     	| Maximum time (seconds) allowed for connection _(default: 30)_ |
 | -v, --verbose     	| Verbose mode                                                  |
 
 ### Target
@@ -121,4 +121,4 @@ If you are still confused or found a bug, please [open the issue](https://github
 
 ## Version
 
-**Current version is 0.0.2** and still development.
+**Current version is 0.0.3-dev** and still development.

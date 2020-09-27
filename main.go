@@ -14,7 +14,7 @@ import (
 
 const (
 	author  = "dwisiswant0"
-	version = "0.0.2"
+	version = "0.0.3-dev"
 	banner  = `
                       _
    __ _  ___ ____ ___| |_ __ _ _ __ ___ 
@@ -47,8 +47,8 @@ func init() {
 	flag.Int64Var(&cfg.Quality, "quality", 75, "")
 	flag.Int64Var(&cfg.Quality, "q", 75, "")
 
-	flag.IntVar(&cfg.Timeout, "timeout", 10, "")
-	flag.IntVar(&cfg.Timeout, "T", 10, "")
+	flag.IntVar(&cfg.Timeout, "timeout", 30, "")
+	flag.IntVar(&cfg.Timeout, "T", 30, "")
 
 	flag.BoolVar(&cfg.Verbose, "verbose", false, "")
 	flag.BoolVar(&cfg.Verbose, "v", false, "")
