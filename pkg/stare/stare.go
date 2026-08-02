@@ -25,11 +25,8 @@ type Config struct {
 	Concurrency, Timeout int
 	Quality              int64
 	Target, Output       string
-	Buffer               []byte
 	URL                  *bufio.Scanner
 	Verbose              bool
-	Context              context.Context
-	CtxCancel            context.CancelFunc
 }
 
 // New to proceed screenshots
@@ -37,17 +34,31 @@ func New(cfg *Config) {
 	var wg sync.WaitGroup
 	jobs := make(chan string)
 
-	cfg.Context, _ = chromedp.NewContext(context.Background())
-	cfg.Context, cfg.CtxCancel = context.WithTimeout(cfg.Context, time.Duration(cfg.Timeout)*time.Second)
-	defer cfg.CtxCancel()
+	browserCtx, cancelBrowser := chromedp.NewContext(context.Background())
+	defer cancelBrowser()
+
+	// Allocate the browser up-front so that the worker contexts below
+	// inherit a single browser instance instead of spinning up their own.
+	if err := chromedp.Run(browserCtx); err != nil {
+		if cfg.Verbose {
+			fmt.Fprintf(os.Stderr, "[%s] Failed to start browser: %s\n", aurora.Red("!"), err.Error())
+		}
+		return
+	}
 
 	for i := 0; i < cfg.Concurrency; i++ {
 		wg.Add(1)
 		go func() {
-			for url := range jobs {
-				cfg.exec(url)
-			}
 			defer wg.Done()
+
+			for url := range jobs {
+				// Use a fresh tab per URL so that concurrent captures don't
+				// interfere with each other and each capture starts from a
+				// clean page.
+				ctx, cancel := chromedp.NewContext(browserCtx)
+				cfg.exec(ctx, url)
+				cancel()
+			}
 		}()
 	}
 
@@ -66,21 +77,28 @@ func New(cfg *Config) {
 	wg.Wait()
 }
 
-func (cfg *Config) exec(url string) {
-	if err := chromedp.Run(cfg.Context, screenshot(url, cfg.Quality, &cfg.Buffer)); err != nil {
+func (cfg *Config) exec(ctx context.Context, url string) {
+	// Apply the timeout per-URL so that a slow target doesn't kill the
+	// shared browser context (and every other pending capture) with it.
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(cfg.Timeout)*time.Second)
+	defer cancel()
+
+	var buf []byte
+	if err := chromedp.Run(ctx, screenshot(url, cfg.Quality, &buf)); err != nil {
 		if cfg.Verbose {
 			fmt.Fprintf(os.Stderr, "[%s] %s\n", aurora.Red("!"), err.Error())
 		}
+		return
 	}
 
 	out := path.Join(cfg.Output, replacer(url)+".png")
-	if err := ioutil.WriteFile(out, cfg.Buffer, 0644); err != nil {
+	if err := ioutil.WriteFile(out, buf, 0644); err != nil {
 		if cfg.Verbose {
 			fmt.Fprintf(os.Stderr, "[%s] Failed to create output screenshot: %s\n", aurora.Red("!"), err.Error())
 		}
-	} else {
-		fmt.Printf("[%s] Screenshot taken for %s (Output: %s)\n", aurora.Green("+"), aurora.Green(url), aurora.Magenta(out))
+		return
 	}
+	fmt.Printf("[%s] Screenshot taken for %s (Output: %s)\n", aurora.Green("+"), aurora.Green(url), aurora.Magenta(out))
 }
 
 func screenshot(url string, quality int64, res *[]byte) chromedp.Tasks {
