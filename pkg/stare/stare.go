@@ -10,6 +10,8 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -20,12 +22,57 @@ import (
 	"github.com/projectdiscovery/gologger"
 )
 
+type Resolution struct {
+	Width  int64
+	Height int64
+}
+
+type Resolutions []Resolution
+
+func (r *Resolutions) String() string {
+	var values []string
+
+	for _, res := range *r {
+		values = append(values, fmt.Sprintf("%dx%d", res.Width, res.Height))
+	}
+
+	return strings.Join(values, ",")
+}
+
+func (r *Resolutions) Set(value string) error {
+	parts := strings.Split(value, "x")
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid resolution %q, expected WIDTHxHEIGHT", value)
+	}
+
+	width, err := strconv.ParseInt(parts[0], 10, 64)
+	if err != nil {
+		return fmt.Errorf("invalid width %q", parts[0])
+	}
+
+	height, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		return fmt.Errorf("invalid height %q", parts[1])
+	}
+
+	if width <= 0 || height <= 0 {
+		return fmt.Errorf("resolution must be positive")
+	}
+
+	*r = append(*r, Resolution{
+		Width:  width,
+		Height: height,
+	})
+
+	return nil
+}
+
 // Config declare its options
 type Config struct {
 	Concurrency, Timeout int
 	Quality              int64
 	Target, Output       string
-	Buffer               []byte
+	Resolutions          Resolutions
 	URL                  *bufio.Scanner
 	Verbose              bool
 	Context              context.Context
@@ -67,23 +114,28 @@ func New(cfg *Config) {
 }
 
 func (cfg *Config) exec(url string) {
-	if err := chromedp.Run(cfg.Context, screenshot(url, cfg.Quality, &cfg.Buffer)); err != nil {
-		if cfg.Verbose {
-			fmt.Fprintf(os.Stderr, "[%s] %s\n", aurora.Red("!"), err.Error())
-		}
-	}
+	err := chromedp.Run(cfg.Context,
+		screenshot(
+			url,
+			cfg.Quality,
+			cfg.Resolutions,
+			cfg.Output,
+			cfg.Verbose,
+		),
+	)
 
-	out := path.Join(cfg.Output, replacer(url)+".png")
-	if err := ioutil.WriteFile(out, cfg.Buffer, 0644); err != nil {
-		if cfg.Verbose {
-			fmt.Fprintf(os.Stderr, "[%s] Failed to create output screenshot: %s\n", aurora.Red("!"), err.Error())
-		}
-	} else {
-		fmt.Printf("[%s] Screenshot taken for %s (Output: %s)\n", aurora.Green("+"), aurora.Green(url), aurora.Magenta(out))
+	if err != nil && cfg.Verbose {
+		fmt.Fprintf(os.Stderr, "[%s] %s\n", aurora.Red("!"), err)
 	}
 }
 
-func screenshot(url string, quality int64, res *[]byte) chromedp.Tasks {
+func screenshot(
+	url string,
+	quality int64,
+	resolutions Resolutions,
+	output string,
+	verbose bool,
+) chromedp.Tasks {
 	return chromedp.Tasks{
 		chromedp.Navigate(url),
 		chromedp.ActionFunc(func(ctx context.Context) error {
@@ -92,29 +144,81 @@ func screenshot(url string, quality int64, res *[]byte) chromedp.Tasks {
 				return err
 			}
 
-			width, height := int64(math.Ceil(contentSize.Width)), int64(math.Ceil(contentSize.Height))
-
-			err = emulation.SetDeviceMetricsOverride(width, height, 1, false).
-				WithScreenOrientation(&emulation.ScreenOrientation{
-					Type:  emulation.OrientationTypePortraitPrimary,
-					Angle: 0,
-				}).
-				Do(ctx)
-			if err != nil {
-				return err
+			// if no resolution provided, then use the default that comes with the page
+			if len(resolutions) == 0 {
+				resolutions = Resolutions{
+					{
+						Width:  int64(math.Ceil(contentSize.Width)),
+						Height: int64(math.Ceil(contentSize.Height)),
+					},
+				}
 			}
 
-			*res, err = page.CaptureScreenshot().
-				WithQuality(quality).
-				WithClip(&page.Viewport{
-					X:      contentSize.X,
-					Y:      contentSize.Y,
-					Width:  contentSize.Width,
-					Height: contentSize.Height,
-					Scale:  1,
+			for _, resolution := range resolutions {
+				height := resolution.Height
+
+				// override height to capture top to bottom
+				if contentSize.Height > float64(height) {
+					height = int64(math.Ceil(contentSize.Height))
+				}
+
+				err := emulation.SetDeviceMetricsOverride(
+					resolution.Width,
+					height,
+					1,
+					false,
+				).WithScreenOrientation(&emulation.ScreenOrientation{
+					Type:  emulation.OrientationTypePortraitPrimary,
+					Angle: 0,
 				}).Do(ctx)
-			if err != nil {
-				return err
+
+				if err != nil {
+					return err
+				}
+
+				res, err := page.CaptureScreenshot().
+					WithQuality(quality).
+					WithClip(&page.Viewport{
+						X:      0,
+						Y:      0,
+						Width:  float64(resolution.Width),
+						Height: float64(height),
+						Scale:  1,
+					}).
+					Do(ctx)
+
+				if err != nil {
+					return err
+				}
+
+				out := path.Join(
+					output,
+					fmt.Sprintf(
+						"%s-%dx%d.png",
+						replacer(url),
+						resolution.Width,
+						resolution.Height,
+					),
+				)
+
+				if err := ioutil.WriteFile(out, res, 0644); err != nil {
+					if verbose {
+						fmt.Fprintf(
+							os.Stderr,
+							"[%s] Failed to create output screenshot: %s\n",
+							aurora.Red("!"),
+							err,
+						)
+					}
+					continue
+				}
+
+				fmt.Printf(
+					"[%s] Screenshot taken for %s (Output: %s)\n",
+					aurora.Green("+"),
+					aurora.Green(url),
+					aurora.Magenta(out),
+				)
 			}
 
 			return nil

@@ -47,6 +47,8 @@ func init() {
 	flag.Int64Var(&cfg.Quality, "quality", 75, "")
 	flag.Int64Var(&cfg.Quality, "q", 75, "")
 
+	flag.Var(&cfg.Resolutions, "resolution", "Screenshot resolution")
+
 	flag.IntVar(&cfg.Timeout, "timeout", 10, "")
 	flag.IntVar(&cfg.Timeout, "T", 10, "")
 
