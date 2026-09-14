@@ -84,6 +84,7 @@ This will display help for the tool. Here are all the switches it supports.
 | -q, --quality     	| Image quality to produce _(default: 75)_                      |
 | -T, --timeout     	| Maximum time (seconds) allowed for connection _(default: 10)_ |
 | -v, --verbose     	| Verbose mode                                                  |
+| -r, --resolution      | Set custom resolution e.g. `1920x1080` (repeatable; auto)     |
 
 ### Target
 
@@ -108,7 +109,7 @@ In case you want to chained with other tools.
 ```bash
 ▶ subfinder -d domain.tld -silent | httpx -silent | go-stare -o ./out
 # or
-▶ gau domain.tld | go-stare -o ./out -q 50
+▶ gau domain.tld | go-stare -r 1920x1080 -r 640x480 -o ./out -q 50
 ```
 
 ## Help & Bugs
