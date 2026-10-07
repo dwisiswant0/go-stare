@@ -1,10 +1,10 @@
 module github.com/dwisiswant0/go-stare
 
-go 1.15
+go 1.27
 
 require (
-	github.com/chromedp/cdproto v0.0.0-20210104223854-2cc87dae3ee3
-	github.com/chromedp/chromedp v0.6.0
+	github.com/chromedp/cdproto v0.157.4
+	github.com/chromedp/chromedp v0.19.1
 	github.com/logrusorgru/aurora v0.0.0-20200102142835-e9ef32dff381
 	github.com/projectdiscovery/gologger v1.0.1
 )
